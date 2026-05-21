@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>じゃんけん 5回勝負</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #f0f4f8;
+        }
+        .retro-font {
+            font-family: 'DotGothic16', sans-serif;
+        }
+        .choice-btn {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .choice-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .choice-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="game-container" class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">じゃんけん 5回勝負</h1>
+        
+        <!-- Score Board -->
+        <div class="flex justify-between mb-8 bg-gray-100 p-4 rounded-xl">
+            <div>
+                <p class="text-sm text-gray-500">ラウンド</p>
+                <p id="round-count" class="text-2xl font-bold text-blue-600">1 / 5</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">あなたの勝ち</p>
+                <p id="win-count" class="text-2xl font-bold text-green-600">0</p>
+            </div>
+        </div>
+
+        <!-- Feedback Area -->
+        <div id="feedback-area" class="h-32 flex flex-col items-center justify-center mb-8 border-2 border-dashed border-gray-200 rounded-2xl">
+            <p id="cpu-hand" class="text-5xl mb-2">❔</p>
+            <p id="game-message" class="text-lg font-medium text-gray-700">準備はいい？</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div id="controls" class="grid grid-cols-3 gap-4">
+            <button onclick="play('rock')" class="choice-btn bg-white border-2 border-red-400 hover:bg-red-50 p-4 rounded-2xl text-4xl">
+                ✊<br><span class="text-sm font-bold text-red-500">グー</span>
+            </button>
+            <button onclick="play('paper')" class="choice-btn bg-white border-2 border-green-400 hover:bg-green-50 p-4 rounded-2xl text-4xl">
+                🖐️<br><span class="text-sm font-bold text-green-500">パー</span>
+            </button>
+            <button onclick="play('scissors')" class="choice-btn bg-white border-2 border-yellow-400 hover:bg-yellow-50 p-4 rounded-2xl text-4xl">
+                ✌️<br><span class="text-sm font-bold text-yellow-500">チョキ</span>
+            </button>
+        </div>
+
+        <!-- Result Modal (Hidden by default) -->
+        <div id="result-overlay" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+            <div class="bg-white p-8 rounded-3xl max-w-sm w-full text-center">
+                <p id="final-emoji" class="text-6xl mb-4">🎉</p>
+                <h2 id="final-title" class="text-3xl font-bold mb-2">おめでとう！</h2>
+                <p id="final-stats" class="text-gray-600 mb-6">5戦中 3回勝ちました</p>
+                <button onclick="resetGame()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition">
+                    もう一度あそぶ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let wins = 0;
+        let rounds = 0;
+        const maxRounds = 5;
+
+        const hands = {
+            rock: { emoji: '✊', beats: 'scissors' },
+            paper: { emoji: '🖐️', beats: 'rock' },
+            scissors: { emoji: '✌️', beats: 'paper' }
+        };
+
+        const cpuEmoji = {
+            rock: '✊',
+            paper: '🖐️',
+            scissors: '✌️'
+        };
+
+        function play(playerChoice) {
+            if (rounds >= maxRounds) return;
+
+            const choices = Object.keys(hands);
+            const cpuChoice = choices[Math.floor(Math.random() * choices.length)];
+            
+            // Update UI with CPU hand
+            document.getElementById('cpu-hand').textContent = cpuEmoji[cpuChoice];
+
+            let message = "";
+            if (playerChoice === cpuChoice) {
+                message = "あいこ！もう一回！";
+                // あいこはラウンドに数えないルールにしましょう（5回勝負を完遂するため）
+            } else if (hands[playerChoice].beats === cpuChoice) {
+                message = "あなたの勝ち！";
+                wins++;
+                rounds++;
+            } else {
+                message = "あなたの負け...";
+                rounds++;
+            }
+
+            // Update Score
+            document.getElementById('game-message').textContent = message;
+            document.getElementById('round-count').textContent = `${Math.min(rounds + 1, maxRounds)} / ${maxRounds}`;
+            document.getElementById('win-count').textContent = wins;
+
+            // Check if game finished
+            if (rounds >= maxRounds) {
+                showFinalResult();
+            }
+        }
+
+        function showFinalResult() {
+            const overlay = document.getElementById('result-overlay');
+            const title = document.getElementById('final-title');
+            const stats = document.getElementById('final-stats');
+            const emoji = document.getElementById('final-emoji');
+
+            stats.textContent = `5戦中 ${wins}回 勝ちました`;
+
+            if (wins >= 3) {
+                title.textContent = "おめでとう！";
+                title.className = "text-3xl font-bold mb-2 text-green-600";
+                emoji.textContent = "🏆";
+            } else {
+                title.textContent = "残念...";
+                title.className = "text-3xl font-bold mb-2 text-red-600";
+                emoji.textContent = "💀";
+            }
+
+            overlay.classList.remove('hidden');
+        }
+
+        function resetGame() {
+            wins = 0;
+            rounds = 0;
+            document.getElementById('round-count').textContent = `1 / ${maxRounds}`;
+            document.getElementById('win-count').textContent = "0";
+            document.getElementById('cpu-hand').textContent = "❔";
+            document.getElementById('game-message').textContent = "準備はいい？";
+            document.getElementById('result-overlay').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
